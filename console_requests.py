@@ -1,8 +1,10 @@
+from urllib.request import Request
 import requests
 import json
 import ast
-import urllib
+import colorama
 import argparse
+import sys
 
 class Fast_Requests:
 
@@ -16,16 +18,20 @@ class Fast_Requests:
         self.headers = self.get_headers()
         self.response = self._requests()
 
+
     
     def get_host(self):
-        url = self.get_url()
-        return url
+        
+        return self.args.u
 
     def get_method(self):
-        return f"{self.args.m}".upper()
+        
+        return self.args.m.upper()
     
     def get_params(self):
         return self.args.p
+
+
 
     def get_data(self):
         if self.args.d:
@@ -37,81 +43,80 @@ class Fast_Requests:
     def get_headers(self):
         return self.args.hds or {}
 
-    def get_auth(self):
-        auth = self.args.a
-        print(auth)
-        return auth
-
-    def get_url(self):
-        if 'https://' and 'http://' in self.args.u:
-            url = self.args.u
-        elif self.args.u == 'locahost' or '127.0.0.1':
-            url = "http://" + self.args.u
-
-            # if self.PORT is not None:
-            #     url += ":" + self.PORT
-            #     url += "/"
-            # if self.path is not None:
-            #     url += self.path
-            # if self.params is not None:
-            #     url += "?"
-            #     url += urllib.urlencode(self.params)
-        return url
 
     def _requests(self):
         method = self.METHOD
         params=self.params
         headers = self.headers
-        # try:
-        if method == 'GET':
-            r = requests.get(self.HOST, params=params,headers=headers)
-            return r
-        elif method == "POST":
-            headers["Content-Type"] = "application/json"
-            r = requests.post(self.HOST, data= json.dumps(self.DATA),headers=headers,params=params)   #, headers={"Content-Type":"application/json"})
-            return r
-        elif method == "PUT":
-            headers["Content-Type"] = "application/json"
-            r = requests.put(self.HOST, data = json.dumps(self.DATA),headers=headers,params=params) 
-            return r
-        elif method == "DELETE":
-            r = requests.delete(self.HOST,params=params)  
-            return r
-        # except Exception as e:
-        #     print(e)
-            
+        try:
+            if method == 'GET':
+                r = requests.get(self.HOST, params=params,headers=headers)
+                return r
+            elif method == "POST":
+                headers['Content-type'] = "application/json"
+                r = requests.post(self.HOST, data= json.dumps(self.DATA),headers=headers,params=params)   #, headers={"Content-Type":"application/json"})
+                return r
+            elif method == "PUT":
+                headers['Content-type'] = "application/json"
+                r = requests.put(self.HOST, data = json.dumps(self.DATA),headers=headers,params=params) 
+                return r
+            elif method == "DELETE":
+                r = requests.delete(self.HOST,params=params)
+                return r
+        except requests.RequestException:
+            print(colorama.Fore.RED + 'ERROR: There was an ambiguous exception that occurred while handling your request.')
+        except requests.HTTPError:
+            print(colorama.Fore.RED + 'ERROR: An HTTP error occurred.')
+        except requests.URLRequired:
+            print(colorama.Fore.RED + 'ERROR: A valid URL is required to make a request.')
+        except requests.TooManyRedirects:
+            print(colorama.Fore.RED + 'ERROR: Too many redirects.')
+        except requests.ConnectTimeout:
+            print(colorama.Fore.RED + 'ERROR: The request timed out while trying to connect to the remote server.')
+        except requests.ReadTimeout:
+            print(colorama.Fore.RED + 'ERROR: The server did not send any data in the allotted amount of time.')
+        except requests.Timeout:
+            print(colorama.Fore.RED + 'ERROR: The request timed out.')
+        except Exception as e:
+            print(colorama.Fore.RED + str(e))
+        sys.exit()
+
+
     def __repr__(self) -> str:
         data = self.args.format
         try:
             if data == "json":
-                return f'STATUS_CODE:{self.response.status_code}- {self.response.json()}'
+                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}\n INFO:{self.response.json()}'
             elif data == "content":
-                return f'STATUS_CODE:{self.response.status_code}- {self.response.content}'
+                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.content}'
             elif data == "text":
-                return f'STATUS_CODE:{self.response.status_code}- {self.response.text}'
+                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.text}'
         except json.JSONDecodeError:
             return f'{self.response.text}'
 
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-format",type=str, default="json",help="Formato retorno de datos.")
-    parser.add_argument("-d",type=str,default=None, help="Datos para enviar (POST, DELETE, PUT).")
-    parser.add_argument("-p",type=str, default=None, help="Parametros para enviar.")
-    parser.add_argument("-hds",type=str, default=None, help="Headers para enviar.")
-    parser.add_argument("-u",type=str, required=True,help="Servidor destino.")
-    parser.add_argument("-m",type=str, default="GET",help="Metodo de peticion.")
+    parser.add_argument("-format",type=str, default="text",help="Return data format.(json,conent,text)")
+    parser.add_argument("-d",type=str,default=None, help="Data to send.Type JSON")
+    parser.add_argument("-p",type=str, default=None, help="Shipping parameters.")
+    parser.add_argument("-hds",type=str, default=None, help="Add headers to requests.")
 
-
-
+    parser.add_argument("-u",type=str,help="Server requests.")
+    parser.add_argument("-m",type=str, default="GET",help="Request method, default GET select (POST, DELETE, PUT,).")
 
     args = parser.parse_args()
-    # Fast_Requests(args)
 
-    print(Fast_Requests(args))
+
+    # Fast_Requests(args)
+    from pprint import pprint
+    pprint(Fast_Requests(args))
 
 
 if __name__ == '__main__':
+    colorama.init()
+
     main()
 
 
