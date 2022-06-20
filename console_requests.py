@@ -11,57 +11,81 @@ class Fast_Requests:
     def __init__(self,args):
         # Define all args
         self.args = args
+        self.dfile = self.args.dfile
         self.HOST = self.get_host()
         self.METHOD = self.get_method()
         self.DATA = self.get_data()
+        self.format = self.get_format()
         self.params = self.get_params()
         self.headers = self.get_headers()
         self.response = self._requests()
 
+    def get_data_file(self):
+        if self.dfile:
+            with open(self.dfile, 'r') as f:
+                data_tojson = json.load(f)
+                return data_tojson
+        else:
+            return None
 
     
     def get_host(self):
-        
+        if self.dfile:
+            host = self.get_data_file().get('url',None) or self.get_data_file().get('host',None) or self.get_data_file().get('server',None)
+            if host is None:
+                print(colorama.Fore.RED + "ERROR:" + "Wrong data file configuration. Try url, host or server")
+                sys.exit()
+            return host
         return self.args.u
 
     def get_method(self):
-        
+        if self.dfile:
+            method = self.get_data_file()['method'].upper()
+            return method
         return self.args.m.upper()
+
+    def get_format(self):
+        if self.get_data_file().get('format'):
+            return self.get_data_file().get('format') 
+        else:
+            return self.args.format
     
     def get_params(self):
         return self.args.p
 
 
-
     def get_data(self):
         if self.args.d:
             d = ast.literal_eval(self.args.d)
+        elif self.dfile:
+            d = self.get_data_file()['data']
         else:
             d = self.args.d
         return d
 
     def get_headers(self):
-        return self.args.hds or {}
+        return self.args.hds or None
 
 
     def _requests(self):
         method = self.METHOD
         params=self.params
-        headers = self.headers
         try:
             if method == 'GET':
-                r = requests.get(self.HOST, params=params,headers=headers)
+                r = requests.get(self.HOST, params=params,headers=self.headers)
+                self.header = r.headers
                 return r
             elif method == "POST":
-                headers['Content-type'] = "application/json"
-                r = requests.post(self.HOST, data= json.dumps(self.DATA),headers=headers,params=params)   #, headers={"Content-Type":"application/json"})
+                r = requests.post(self.HOST, json= self.DATA, headers=self.headers,params=params)
+                self.headers = r.headers   #, headers={"Content-Type":"application/json"})
                 return r
             elif method == "PUT":
-                headers['Content-type'] = "application/json"
-                r = requests.put(self.HOST, data = json.dumps(self.DATA),headers=headers,params=params) 
+                r = requests.put(self.HOST, json = self.DATA, headers=self.headers,params=params)
+                self.headers = r.headers 
                 return r
             elif method == "DELETE":
                 r = requests.delete(self.HOST,params=params)
+                self.headers = r.headers
                 return r
         except requests.RequestException:
             print(colorama.Fore.RED + 'ERROR: There was an ambiguous exception that occurred while handling your request.')
@@ -83,13 +107,13 @@ class Fast_Requests:
 
 
     def __repr__(self) -> str:
-        data = self.args.format
+        f = self.format
         try:
-            if data == "json":
-                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}\n INFO:{self.response.json()}'
-            elif data == "content":
+            if f == "json":
+                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.json()}'
+            elif f == "content":
                 return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.content}'
-            elif data == "text":
+            elif f == "text":
                 return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.text}'
         except json.JSONDecodeError:
             return f'{self.response.text}'
@@ -102,16 +126,20 @@ def main():
     parser.add_argument("-d",type=str,default=None, help="Data to send.Type JSON")
     parser.add_argument("-p",type=str, default=None, help="Shipping parameters.")
     parser.add_argument("-hds",type=str, default=None, help="Add headers to requests.")
-
-    parser.add_argument("-u",type=str,help="Server requests.")
     parser.add_argument("-m",type=str, default="GET",help="Request method, default GET select (POST, DELETE, PUT,).")
+    parser.add_argument("-dfile",type=str, default=None, help="Send data with a file.")
+
+    namespace,arr = parser.parse_known_args()
+
+    if namespace.dfile is None:
+        parser.add_argument("-u",type=str,required=True,help="Server requests.")
+    else:
+        parser.add_argument("-u",type=str,required=False,help="Server requests.")
 
     args = parser.parse_args()
 
-
     # Fast_Requests(args)
-    from pprint import pprint
-    pprint(Fast_Requests(args))
+    print(Fast_Requests(args))
 
 
 if __name__ == '__main__':
