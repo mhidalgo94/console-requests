@@ -1,4 +1,4 @@
-from urllib.request import Request
+import configparser
 import requests
 import json
 import ast
@@ -6,12 +6,13 @@ import colorama
 import argparse
 import sys
 
-class Fast_Requests:
+class Console_Requests:
 
     def __init__(self,args):
         # Define all args
         self.args = args
         self.dfile = self.args.dfile
+        self.cfile = self.args.cfile
         self.HOST = self.get_host()
         self.METHOD = self.get_method()
         self.DATA = self.get_data()
@@ -20,45 +21,117 @@ class Fast_Requests:
         self.headers = self.get_headers()
         self.response = self._requests()
 
+    def get_config_file(self,args):
+        """
+            Return configuration file.
+        """
+        config = configparser.ConfigParser()
+        
+        if config.read(args[0]):
+            config_to_dict = config._sections
+            if args[1] in config_to_dict:
+                all_data_config = config_to_dict[args[1]]
+                try:
+                    if 'data' in all_data_config:
+                        all_data_config['data'] = ast.literal_eval(all_data_config['data'])
+                        return all_data_config
+                    elif 'file_data' in all_data_config:
+                        all_data_config['data'] = self.read_file_json(all_data_config['file_data'])
+                        return all_data_config
+                except KeyError:
+                    print(colorama.Fore.RED  + "Insert in the configuration file about data to send")
+                    sys.exit()
+            else:
+                print(colorama.Fore.RED + 'Exception raised when a specified section is not found.')
+                sys.exit()
+        else:
+            print(colorama.Fore.RED + f'Could not read file {args[0]}')
+            sys.exit()
+        
+
+    def read_file_json(self, file):
+        """
+            Return read file json.
+        """
+        with open(file, 'r') as f:
+            data_tojson = json.load(f)
+            return data_tojson
+
     def get_data_file(self):
+        """
+            Return data in file json or file configuration.
+        """
         if self.dfile:
-            with open(self.dfile, 'r') as f:
-                data_tojson = json.load(f)
-                return data_tojson
+            return self.read_file_json(self.dfile)
+        elif self.cfile:
+            data_tojson = self.get_config_file(self.cfile)
+            return data_tojson
         else:
             return None
 
-    
     def get_host(self):
+        """
+            Returns the host either json file, configuration file or inserted argument..
+        """
         if self.dfile:
             host = self.get_data_file().get('url',None) or self.get_data_file().get('host',None) or self.get_data_file().get('server',None)
-            if host is None:
+        
+        elif self.cfile:
+            host = self.get_data_file().get('url',None) or self.get_data_file().get('host',None) or self.get_data_file().get('server',None)
+        
+        if host is None:
                 print(colorama.Fore.RED + "ERROR:" + "Wrong data file configuration. Try url, host or server")
                 sys.exit()
-            return host
-        return self.args.u
+
+        return host or self.args.u
 
     def get_method(self):
+        """
+            Returns method json file, configuration file or inserted argument..
+        """
         if self.dfile:
+            method = self.get_data_file()['method'].upper()
+            return method
+        elif self.cfile:
             method = self.get_data_file()['method'].upper()
             return method
         return self.args.m.upper()
 
     def get_format(self):
-        if self.get_data_file().get('format'):
-            return self.get_data_file().get('format') 
+        """
+            Returns format data response json file, configuration file or inserted argument..
+        """
+        if self.get_data_file():
+            return self.get_data_file().get('format')
         else:
             return self.args.format
     
     def get_params(self):
+        """
+            Returns params json file, configuration file or inserted argument..
+        """
+        if self.dfile:
+            params = self.get_data_file()['params']
+            return ast.literal_eval(params)
+        elif self.cfile:
+            params = self.get_data_file()['params']
+            return ast.literal_eval(params)
         return self.args.p
 
 
     def get_data(self):
+        """
+            Returns params json file, configuration file or inserted argument..
+        """
         if self.args.d:
-            d = ast.literal_eval(self.args.d)
+            try:
+                d = ast.literal_eval(self.args.d)
+            except ValueError:
+                print(colorama.Fore.RED  + "The data format is not correct. Fix data content.")
         elif self.dfile:
-            d = self.get_data_file()['data']
+            d = self.get_data_file().get('data',dict())
+        elif self.cfile:
+            d = self.get_data_file().get('data',)
         else:
             d = self.args.d
         return d
@@ -68,6 +141,9 @@ class Fast_Requests:
 
 
     def _requests(self):
+        """
+            Start requests to the server. return a response object
+        """
         method = self.METHOD
         params=self.params
         try:
@@ -110,11 +186,11 @@ class Fast_Requests:
         f = self.format
         try:
             if f == "json":
-                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.json()}'
+                return f'{colorama.Fore.GREEN}STATUS_CODE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.json()}'
             elif f == "content":
-                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.content}'
+                return f'{colorama.Fore.GREEN}STATUS_CODE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.content}'
             elif f == "text":
-                return f'{colorama.Fore.GREEN}RESPONSE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.text}'
+                return f'{colorama.Fore.GREEN}STATUS_CODE:{self.response.status_code} {colorama.Fore.YELLOW}METHOD:{self.METHOD} {colorama.Fore.RESET}INFO:{self.response.text}'
         except json.JSONDecodeError:
             return f'{self.response.text}'
 
@@ -128,18 +204,18 @@ def main():
     parser.add_argument("-hds",type=str, default=None, help="Add headers to requests.")
     parser.add_argument("-m",type=str, default="GET",help="Request method, default GET select (POST, DELETE, PUT,).")
     parser.add_argument("-dfile",type=str, default=None, help="Send data with a file.")
+    parser.add_argument("-cfile",type=str, nargs="+", default=None, help="Config file with all data.")
 
     namespace,arr = parser.parse_known_args()
 
-    if namespace.dfile is None:
+    if namespace.dfile and namespace.cfile is None:
         parser.add_argument("-u",type=str,required=True,help="Server requests.")
     else:
         parser.add_argument("-u",type=str,required=False,help="Server requests.")
 
     args = parser.parse_args()
 
-    # Fast_Requests(args)
-    print(Fast_Requests(args))
+    print(Console_Requests(args))
 
 
 if __name__ == '__main__':
