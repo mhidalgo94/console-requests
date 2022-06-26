@@ -111,10 +111,11 @@ format = json
 data = {'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}
 params = {"Content-Type":"application/json"}
 ```
-```
-- Execute command.
+
+Execute command.
 ```python
 python console_requests.py -cfile configfile.ini ALBUM
+STATUS_CODE:200 METHOD:GET INFO:[{'id': 8, 'name': 'Carlos', 'release_date': '2022-06-01', 'num_stars': 3, 'artist': 1}, {'id': 9, 'name': 'Carlos', 'release_date': '2022-06-01', 'num_stars': 3, 'artist': 1}, {'id': 12, 'name': 'Pedro', 'release_date': '2022-06-01', 'num_stars': 3, 'artist': 1}, {'id': 13, 'name': 'Pedro', 'release_date': '2022-06-01', 'num_stars': 3, 'artist': 1}, {'id': 14, 'name': 'Maikel', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 16, 'name': 'Maikel', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 21, 'name': 'Maikel', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 22, 'name': 'Maikel', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 23, 'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 24, 'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 25, 'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 26, 'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 27, 'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 28, 'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}, {'id': 29, 'name': 'Jhonson', 'release_date': '2022-07-01', 'num_stars': 5, 'artist': 1}]
 ```
 or
 ```python
