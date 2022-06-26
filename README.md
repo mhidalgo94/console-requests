@@ -13,6 +13,17 @@ create virtual environment to install requirements.
 pip install virtualenv
 ```
 
+After install virtual enviroment, create eviroment and activate
+### Linux
+```bash
+virutalenv env
+source env/bin/activate
+```
+###  Windows
+```bash
+./env/Script/activate
+``` 
+
 ```bash
 pip install requirements.txt 
 ```
