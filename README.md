@@ -9,11 +9,12 @@ git clone https://github.com/mhidalgo94/console-requests.git
 ```
 
 create virtual environment to install requirements.
-```pip install virtualenv```
+```bash
+pip install virtualenv
+```
 
-
-
-
-```pip install requirements.txt ```
+```bash
+pip install requirements.txt 
+```
 
 
