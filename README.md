@@ -72,7 +72,7 @@ python console_requests.py -u http://localhost:8000/api/create-album/ -m POST -d
 STATUS_CODE:201 METHOD:POST INFO:{"id":33,"name":"Carlos","release_date":"2022-06-01","num_stars":3,"artist":1}
 ```
 
-2. Request through console with data by json file
+2. Request through console with data by json file. You can use server, url or host variables.
 Example file `data.json`
 ```json
 {
