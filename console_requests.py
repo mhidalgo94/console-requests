@@ -28,9 +28,10 @@ class Console_Requests:
         config = configparser.ConfigParser()
         
         if config.read(args[0]):
+            name_section = args[1].upper()
             config_to_dict = config._sections
-            if args[1] in config_to_dict:
-                all_data_config = config_to_dict[args[1]]
+            if name_section in config_to_dict:
+                all_data_config = config_to_dict[name_section]
                 try:
                     if 'data' in all_data_config:
                         all_data_config['data'] = ast.literal_eval(all_data_config['data'])
@@ -75,15 +76,12 @@ class Console_Requests:
         """
         if self.dfile:
             host = self.get_data_file().get('url',None) or self.get_data_file().get('host',None) or self.get_data_file().get('server',None)
-        
+            return host
         elif self.cfile:
             host = self.get_data_file().get('url',None) or self.get_data_file().get('host',None) or self.get_data_file().get('server',None)
+            return host
         
-        if host is None:
-                print(colorama.Fore.RED + "ERROR:" + "Wrong data file configuration. Try url, host or server")
-                sys.exit()
-
-        return host or self.args.u
+        return self.args.u
 
     def get_method(self):
         """
@@ -110,13 +108,11 @@ class Console_Requests:
         """
             Returns params json file, configuration file or inserted argument..
         """
-        if self.dfile:
-            params = self.get_data_file()['params']
-            return ast.literal_eval(params)
-        elif self.cfile:
-            params = self.get_data_file()['params']
-            return ast.literal_eval(params)
-        return self.args.p
+        params = self.get_data_file()
+        if 'params' in params:
+            return params['params']
+        else:
+            return self.args.p
 
 
     def get_data(self):
@@ -207,8 +203,7 @@ def main():
     parser.add_argument("-cfile",type=str, nargs="+", default=None, help="Config file with all data.")
 
     namespace,arr = parser.parse_known_args()
-
-    if namespace.dfile and namespace.cfile is None:
+    if namespace.dfile==None and namespace.cfile == None:
         parser.add_argument("-u",type=str,required=True,help="Server requests.")
     else:
         parser.add_argument("-u",type=str,required=False,help="Server requests.")
